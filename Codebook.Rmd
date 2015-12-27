@@ -1,0 +1,40 @@
+---
+title: "Codebook"
+author: "Yonathan Priambada"
+date: "December 27, 2015"
+output: html_document
+---
+
+##Source Data
+
+The original data can be downloaded from:
+https://d396qusza40orc.cloudfront.net/getdata%2Fprojectfiles%2FUCI%20HAR%20Dataset.zip
+
+and the data description can be found from:
+http://archive.ics.uci.edu/ml/datasets/Human+Activity+Recognition+Using+Smartphones
+
+##Transformation Performed
+
+Transformations performed in order to tidy up this data in this project is as follow. The steps are performed in order. 
+
+    1. Merges the training and the test sets to create one data set.
+    2. Extracts only the measurements on the mean and standard deviation for each measurement. 
+    3. Uses descriptive activity names to name the activities in the data set
+    4. Appropriately labels the data set with descriptive variable names. 
+    5. From the data set in step 4, creates a second, independent tidy data set with the average of each        variable for each activity and each subject.
+
+The "runanalysis.R" script performs the steps above in order, with the end product is the tidied data in the form of a text file, "Tidy_Data.txt"
+
+The variables in the tidied data can be found in the Readme files in the repository. 
+
+##Description of Variables
+
+After the relabelling of the variables (as performed in the step 4 above), the variables in the data can be summarized into this short description:
+
+For each record in the dataset:
+
+    1. Triaxial acceleration (as labeled by '-x','-y',or '-z') from the accelerometer (total  acceleration) and the estimated body acceleration.
+    2. Triaxial Angular velocity (in x,y,or z, similar to the acceleration) from the gyroscope.
+    3. A 561-feature vector with time (denoted by the label 'Time' and frequency (labeled by      'Frequency') domain variables.
+    4. Its activity label ('Activity')
+    5. An identifier of the subject who carried out the experiment (labeled with 'Subject').   

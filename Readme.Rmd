@@ -1,0 +1,136 @@
+---
+title: "Readme"
+author: "Yonathan Priambada"
+date: "December 27, 2015"
+output: html_document
+---
+
+Firstly, we need to download the data file as well as unzip it.
+
+```{r}
+if(!file.exists('run_data.zip')){
+    url<-"https://d396qusza40orc.cloudfront.net/getdata%2Fprojectfiles%2FUCI%20HAR%20Dataset.zip"
+    
+    download.file(url,destfile = "run_data.zip")##downloading the data file
+}
+unzip("run_data.zip")
+```
+
+For the preliminary works, we install and load the required libraries. Here we use libraries data.table as well as dplyr. Then we extract some metadata from our source data folder, which will be used later when we alter the labels of the columns.
+
+```{r, message=FALSE,warning=FALSE}
+
+library(data.table)
+library(dplyr)
+
+```
+```{r}
+features_labels <- read.table("UCI HAR Dataset/features.txt")
+activity_labels <- read.table("UCI HAR Dataset/activity_labels.txt", header = FALSE)
+```
+
+##Part 1
+
+The original data has two separate data sets, for Train and Test respectively, in part 1 we are supposed to combine the two data sets together. Each data set comes with the same column labels, "Subject","Activity", and "Features". Firstly, we have to combine these columns with their counterparts from the other data set.
+```{r}
+#Reading from the training set
+subjectTrain <- read.table("UCI HAR Dataset/train/subject_train.txt", header = FALSE)
+activityTrain <- read.table("UCI HAR Dataset/train/y_train.txt", header = FALSE)
+featuresTrain <- read.table("UCI HAR Dataset/train/X_train.txt", header = FALSE)
+#Reading from the test set
+subjectTest <- read.table("UCI HAR Dataset/test/subject_test.txt", header = FALSE)
+activityTest <- read.table("UCI HAR Dataset/test/y_test.txt", header = FALSE)
+featuresTest <- read.table("UCI HAR Dataset/test/X_test.txt", header = FALSE)
+
+subject <- rbind(subjectTrain, subjectTest)
+activity <- rbind(activityTrain, activityTest)
+features <- rbind(featuresTrain, featuresTest)
+```
+Afterwards, we can produce the combined data set using the following code. The merged data is denoted by mergedData.
+```{r}
+#Naming the data columns accordingly
+colnames(features) <- t(features_labels[2])
+colnames(activity) <-"Activity"
+colnames(subject) <-"Subject"
+#Finally, the merged data set
+mergedData <-cbind(features, activity, subject)
+
+```
+
+##Part 2
+
+We are going to extract data with mean and standard deviation (std) in it.
+For comparison purpose, we may compute the dimension of the unaltered data.
+```{r}
+dim(mergedData)
+```
+Here we grab the columns with Mean and Std in their names using the grep() function, as well as adding the activity and the subject column in to the extracted data set.
+```{r}
+MeanStd <- grep(".*Mean.*|.*Std.*", names(mergedData), ignore.case=TRUE)
+extractedCol<-c(MeanStd,562,563)
+extractedData<-mergedData[,extractedCol]
+```
+Computing the extracted data set dimension and comparing it against the dimension of the unaltered data
+```{r}
+dim(extractedData)
+```
+If everything is right, then the value should be smaller than the previously computed value.
+
+
+##Part 3
+
+From Activity_label.txt in the zip file, we know that the activity label is numeric, to implement activity names, we need to change it to character
+
+```{r}
+extractedData$Activity<-as.character(extractedData$Activity)
+```
+Now we can implement the activity label as listed in the activity_labels which we have computed in the preliminary section of this work
+```{r}
+for (x in 1:6){
+    extractedData$Activity[extractedData$Activity == x] <- as.character(activity_labels[x,2])
+}
+```
+After the names is updated, 
+```{r}
+extractedData$Activity <- as.factor(extractedData$Activity)
+```
+
+##Part 4 
+
+Firstly we need to know what the default labels say in the extractedData
+```{r}
+names(extractedData)
+```
+By replacing the abbreviations used with its unabbreviated form will yield a more descriptive variable names.
+```{r}
+names(extractedData)<-gsub("Acc", "Accelerometer", names(extractedData))
+names(extractedData)<-gsub("Gyro", "Gyroscope", names(extractedData))
+names(extractedData)<-gsub("BodyBody", "Body", names(extractedData))
+names(extractedData)<-gsub("Mag", "Magnitude", names(extractedData))
+names(extractedData)<-gsub("^t", "Time", names(extractedData))
+names(extractedData)<-gsub("^f", "Frequency", names(extractedData))
+names(extractedData)<-gsub("tBody", "TimeBody", names(extractedData))
+names(extractedData)<-gsub("-mean()", "Mean", names(extractedData), ignore.case = TRUE)
+names(extractedData)<-gsub("-std()", "STD", names(extractedData), ignore.case = TRUE)
+names(extractedData)<-gsub("-freq()", "Frequency", names(extractedData), ignore.case = TRUE)
+names(extractedData)<-gsub("angle", "Angle", names(extractedData))
+names(extractedData)<-gsub("gravity", "Gravity", names(extractedData))
+```
+As such, the new labels will be:
+```{r}
+names(extractedData)
+```
+
+##Part 5 
+
+From the data set in step 4, creates a second, independent tidy data set with the average of each variable for each activity and each subject. Taking the factor Subject as our variable,
+```{r}
+extractedData$Subject <- as.factor(extractedData$Subject)
+extractedData <- data.table(extractedData)
+tidyData <- aggregate(. ~Subject + Activity, extractedData, mean)
+tidyData <- tidyData[order(tidyData$Subject,tidyData$Activity),]
+```
+The 'tidied' data is then printed into a text file Tidy_Data.txt
+```{r}
+write.table(tidyData, file = "Tidy_Data.txt", row.names = FALSE)
+```
